@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragger – Spiel</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/game.css">
+</head>
+
+<body>
+    <header class="navbar">
+        <a href="index.html" class="logo-badge">BY ALÉ</a>
+        <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Design wechseln">
+            <div class="theme-circle-icon"></div>
+        </button>
+    </header>
+
+    <main class="game-container">
+        <div class="scoreboard-bar">
+            <div class="score-box">
+                <span class="score-title">Spieler 1</span>
+                <span class="score-value" id="scoreP1">0</span>
+            </div>
+
+            <div class="timer-box">
+                <span class="timer-label">Zeit</span>
+                <span class="timer-display" id="timeCounter">05:00</span>
+            </div>
+
+            <div class="score-box">
+                <span class="score-title">Spieler 2</span>
+                <span class="score-value" id="scoreP2">0</span>
+            </div>
+        </div>
+
+        <div class="play-area" id="playArea">
+            <div class="side-controls">
+                <button class="action-icon-btn" id="refreshBtn" title="Bild neu laden / wechseln">
+                    <span class="material-symbols-outlined">sync</span>
+                </button>
+                <button class="action-icon-btn" id="clearBtn" title="Feld leeren">
+                    <span class="material-symbols-outlined">delete</span>
+                </button>
+            </div>
+
+            <div class="puzzle-board" id="puzzleBoard">
+                <div class="puzzle-slot" data-index="0"></div>
+                <div class="puzzle-slot" data-index="1"></div>
+                <div class="puzzle-slot" data-index="2"></div>
+                <div class="puzzle-slot" data-index="3"></div>
+                <div class="puzzle-slot" data-index="4"></div>
+                <div class="puzzle-slot" data-index="5"></div>
+                <div class="puzzle-slot" data-index="6"></div>
+                <div class="puzzle-slot" data-index="7"></div>
+                <div class="puzzle-slot" data-index="8"></div>
+                <div class="puzzle-slot" data-index="9"></div>
+                <div class="puzzle-slot" data-index="10"></div>
+                <div class="puzzle-slot" data-index="11"></div>
+            </div>
+        </div>
+
+        <div class="bottom-controls">
+            <div class="manipulation-row">
+                <button class="history-btn" id="undoBtn" title="Rückgängig (Strg+Z)">
+                    <span class="material-symbols-outlined">undo</span>
+                </button>
+
+                <div class="dpad-container">
+                    <button class="dpad-btn dpad-up" id="shiftUpBtn" title="Nach oben verschieben">
+                        <span class="material-symbols-outlined">arrow_drop_up</span>
+                    </button>
+                    <button class="dpad-btn dpad-left" id="shiftLeftBtn" title="Nach links verschieben">
+                        <span class="material-symbols-outlined">arrow_left</span>
+                    </button>
+                    <button class="dpad-btn dpad-right" id="shiftRightBtn" title="Nach rechts verschieben">
+                        <span class="material-symbols-outlined">arrow_right</span>
+                    </button>
+                    <button class="dpad-btn dpad-down" id="shiftDownBtn" title="Nach unten verschieben">
+                        <span class="material-symbols-outlined">arrow_drop_down</span>
+                    </button>
+                </div>
+
+                <button class="history-btn" id="redoBtn" title="Wiederholen (Strg+Y)">
+                    <span class="material-symbols-outlined">redo</span>
+                </button>
+            </div>
+
+            <button class="submit-btn" id="submitBtn">Bestätigen</button>
+        </div>
+    </main>
+
+    <div class="modal-overlay hidden" id="clearModal">
+        <div class="modal-content">
+            <h2 class="modal-title">Spielfeld leeren?</h2>
+            <p class="modal-desc">Alle platzierten Teile werden zurück in den freien Spielbereich gelegt.</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="cancelClearBtn">Abbrechen</button>
+                <button class="btn-danger" id="confirmClearBtn">Leeren</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="refreshWaitModal">
+        <div class="modal-content">
+            <h2 class="modal-title">Anfrage gesendet</h2>
+            <p class="modal-desc" id="refreshWaitDesc">Warte auf Bestätigung von Spieler 2...</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="cancelRefreshWaitBtn">Anfrage abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="refreshConfirmModal">
+        <div class="modal-content">
+            <h2 class="modal-title">Neues Bild laden?</h2>
+            <p class="modal-desc" id="refreshConfirmDesc">Dein Mitspieler möchte das Puzzle neu starten. Möchtest du zustimmen?</p>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="rejectRefreshBtn">Ablehnen</button>
+                <button class="btn-primary" id="acceptRefreshBtn">Zustimmen</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="connectionModal">
+        <div class="modal-content">
+            <h2 class="modal-title" id="connectionTitle">Verbinde...</h2>
+            <p class="modal-desc" id="connectionDesc"></p>
+            <div class="modal-actions">
+                <a class="btn-secondary" id="connectionBackLink" href="index.html" hidden>Zurück zum Menü</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay hidden" id="noticeModal">
+        <div class="modal-content">
+            <h2 class="modal-title" id="noticeTitle"></h2>
+            <p class="modal-desc" id="noticeDesc"></p>
+            <div class="modal-actions">
+                <button class="btn-primary" id="noticeOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="round-banner hidden" id="roundBanner" role="status" aria-live="polite"></div>
+
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/grid-shift.js"></script>
+    <script src="js/history.js"></script>
+    <script src="js/network.js"></script>
+    <script src="js/game.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragger – Hauptmenü</title>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        .menu-container {
+            max-width: 900px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+            width: 100%;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .menu-card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .menu-card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .menu-card-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .room-input {
+            width: 100%;
+            padding: 0.85rem 1.25rem;
+            border-radius: var(--radius-pill);
+            border: 1.5px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1.1rem;
+            letter-spacing: 0.1em;
+            text-align: center;
+            margin-bottom: 1.25rem;
+            outline: none;
+        }
+
+        .room-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        @media (max-width: 768px) {
+            .menu-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar">
+        <a href="index.html" class="logo-badge">BY ALÉ</a>
+        <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Design wechseln">
+            <div class="theme-circle-icon"></div>
+        </button>
+    </header>
+
+    <main class="menu-container">
+        <div class="menu-grid">
+            <div class="menu-card">
+                <div>
+                    <h2 class="menu-card-title">Spiel erstellen</h2>
+                    <p class="menu-card-desc">Starten Sie als Host, bestimmen Sie die Zeitdauer und teilen Sie den Code
+                        mit Ihrem Mitspieler.</p>
+                </div>
+                <a href="host.html" class="btn-primary" style="text-align: center; text-decoration: none;">Raum
+                    eröffnen</a>
+            </div>
+
+            <div class="menu-card">
+                <div>
+                    <h2 class="menu-card-title">Spiel beitreten</h2>
+                    <p class="menu-card-desc">Geben Sie den 6-stelligen Zahlencode ein, um direkt beizutreten.</p>
+                    <input type="text" maxlength="6" class="room-input" id="joinRoomId" placeholder="z. B. 918733">
+                </div>
+                <button class="btn-primary" id="joinRoomBtn">Beitreten</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/theme.js"></script>
+    <script>
+        document.getElementById('joinRoomBtn').addEventListener('click', () => {
+            const roomId = document.getElementById('joinRoomId').value.trim();
+            if (roomId.length === 6) {
+                window.location.href = `game.html?room=${encodeURIComponent(roomId)}&role=guest`;
+            } else {
+                alert('Bitte geben Sie einen gültigen 6-stelligen Code ein.');
+            }
+        });
+    </script>
+</body>
+
+</html>

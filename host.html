@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragger – Host Konfiguration</title>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        .host-card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            max-width: 600px;
+            margin: 3rem auto;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .field-group {
+            margin-bottom: 1.75rem;
+        }
+
+        .field-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .select-input {
+            width: 100%;
+            padding: 0.85rem 1.25rem;
+            border-radius: var(--radius-pill);
+            border: 1.5px solid var(--border-color);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .room-code-display {
+            background-color: var(--bg-color);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            font-family: monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            text-align: center;
+            border: 1px dashed var(--accent-color);
+            margin: 1rem 0;
+            user-select: all;
+        }
+
+        .waiting-text {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .mode-options {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .mode-card {
+            display: block;
+            position: relative;
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-md);
+            border: 1.5px solid var(--border-color);
+            background-color: var(--bg-color);
+            cursor: pointer;
+            transition: border-color var(--transition-fast), background-color var(--transition-fast);
+        }
+
+        .mode-card:hover {
+            border-color: var(--accent-color);
+        }
+
+        .mode-card:has(input:checked) {
+            border-color: var(--accent-color);
+            background-color: var(--card-hover-bg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .mode-card input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .mode-name {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .mode-desc {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .field-group[hidden] {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar">
+        <a href="index.html" class="logo-badge">BY ALÉ</a>
+        <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Design wechseln">
+            <div class="theme-circle-icon"></div>
+        </button>
+    </header>
+
+    <main>
+        <div class="host-card">
+            <h2 class="modal-title" style="text-align: left;">Raumeinstellungen</h2>
+            <div class="field-group">
+                <span class="field-label">Spielmodus</span>
+                <div class="mode-options">
+                    <label class="mode-card">
+                        <input type="radio" name="gameMode" value="blitz" checked>
+                        <span class="mode-name">Blitz-Modus</span>
+                        <span class="mode-desc">Wer ein Puzzle zuerst richtig löst, bekommt 20 Punkte. Danach geht es sofort mit einem neuen Zufalls-Puzzle weiter.</span>
+                    </label>
+                    <label class="mode-card">
+                        <input type="radio" name="gameMode" value="calm">
+                        <span class="mode-name">Ruhiger Modus</span>
+                        <span class="mode-desc">Ihr löst dasselbe Puzzle gemeinsam – ohne Zeitlimit und ohne Druck.</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="field-group" id="timeLimitGroup">
+                <label class="field-label" for="timeLimitSelect">Spieldauer (Blitz)</label>
+                <select class="select-input" id="timeLimitSelect">
+                    <option value="180">3 Minuten</option>
+                    <option value="300" selected>5 Minuten</option>
+                    <option value="600">10 Minuten</option>
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label class="field-label">Ihr 6-stelliger Einladungscode</label>
+                <div class="room-code-display" id="generatedRoomCode">------</div>
+                <p class="waiting-text" id="hostStatusText">Warte auf Spieler 2...</p>
+            </div>
+
+            <button class="btn-primary" id="startHostGameBtn" style="width: 100%;" disabled>Warten auf
+                Verbindung</button>
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="js/theme.js"></script>
+    <script>
+        const generatedRoomCode = document.getElementById('generatedRoomCode');
+        const hostStatusText = document.getElementById('hostStatusText');
+        const startHostGameBtn = document.getElementById('startHostGameBtn');
+        const timeLimitSelect = document.getElementById('timeLimitSelect');
+        const timeLimitGroup = document.getElementById('timeLimitGroup');
+        const modeInputs = document.querySelectorAll('input[name="gameMode"]');
+
+        function getSelectedMode() {
+            const checked = document.querySelector('input[name="gameMode"]:checked');
+            return checked ? checked.value : 'blitz';
+        }
+
+        function syncModeFields() {
+            timeLimitGroup.hidden = getSelectedMode() === 'calm';
+        }
+
+        modeInputs.forEach((input) => input.addEventListener('change', syncModeFields));
+        syncModeFields();
+
+        let sixDigitCode = '';
+        let peer = null;
+        let activeConn = null;
+        let launching = false;
+
+        function setWaiting() {
+            hostStatusText.textContent = 'Warte auf Spieler 2...';
+            startHostGameBtn.disabled = true;
+            startHostGameBtn.textContent = 'Warten auf Verbindung';
+        }
+
+        function setJoined() {
+            hostStatusText.textContent = 'Spieler 2 beigetreten!';
+            startHostGameBtn.disabled = false;
+            startHostGameBtn.textContent = 'Spiel starten';
+        }
+
+        function createPeer() {
+            sixDigitCode = Math.floor(100000 + Math.random() * 900000).toString();
+            generatedRoomCode.textContent = '------';
+            activeConn = null;
+            setWaiting();
+
+            const current = new Peer('dragger-' + sixDigitCode);
+            peer = current;
+
+            current.on('open', () => {
+                if (current === peer) generatedRoomCode.textContent = sixDigitCode;
+            });
+
+            current.on('connection', (conn) => {
+                if (current !== peer || launching) return;
+                const previous = activeConn;
+                activeConn = conn;
+                if (previous) previous.close();
+
+                const handleOpen = () => {
+                    if (conn === activeConn) setJoined();
+                };
+
+                conn.on('open', handleOpen);
+                conn.on('close', () => {
+                    if (conn !== activeConn) return;
+                    activeConn = null;
+                    setWaiting();
+                });
+                conn.on('error', () => {
+                    if (conn !== activeConn) return;
+                    activeConn = null;
+                    setWaiting();
+                });
+
+                if (conn.open) handleOpen();
+            });
+
+            current.on('disconnected', () => {
+                if (current === peer && !current.destroyed && !launching) current.reconnect();
+            });
+
+            current.on('error', (err) => {
+                if (current !== peer || launching) return;
+                if (err.type === 'unavailable-id' || err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error' || err.type === 'socket-closed') {
+                    current.destroy();
+                    setTimeout(createPeer, 1500);
+                }
+            });
+        }
+
+        startHostGameBtn.addEventListener('click', () => {
+            if (launching || !activeConn || !activeConn.open) return;
+            launching = true;
+            startHostGameBtn.disabled = true;
+            const target = `game.html?room=${sixDigitCode}&role=host&mode=${getSelectedMode()}&time=${timeLimitSelect.value}`;
+            peer.destroy();
+            setTimeout(() => {
+                window.location.href = target;
+            }, 500);
+        });
+
+        createPeer();
+    </script>
+</body>
+
+</html>
